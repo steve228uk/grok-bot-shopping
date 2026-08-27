@@ -16,7 +16,7 @@ This skill keeps Shop's **flow and CLI**. It replaces only the **Grok Bot channe
 
 Confirmed card: photo on the same bubble, title `[Name](https://pdp)` with no wrapping `**`.
 
-Siblings: [Merchant agentic commerce](sand-workflow:merchant-agentic-commerce) for UCP / Woo / a single non-Shop origin. [Stripe Onelink checkout](sand-workflow:stripe-onelink-checkout) when paying in the box browser.
+Siblings: [Merchant agentic commerce](sand-workflow:merchant-agentic-commerce) for UCP / Woo / a single non-Shop origin — Shop catalog is an **augment** to that search, not the only feed. [Stripe Onelink checkout](sand-workflow:stripe-onelink-checkout) when paying in the box browser.
 
 Canonical spec (re-read when flags change): https://shop.app/SKILL.md
 CLI blocked: https://shop.app/references/catalog-mcp.md and https://shop.app/references/direct-api.md
@@ -33,7 +33,7 @@ npx --yes @shopify/shop-cli [global flags] <subcommand> …
 
 Never `pnpm`, never `npm install -g`, never a bare `shop`.
 
-**Identify as Grok Bot on catalog calls.** `--profile-url` is a *global* flag (before the subcommand). Always pass it on `search` and `catalog`:
+**Identify as Grok Bot on catalog calls.** `--profile-url` is a *global* flag (before the subcommand). Always pass it on `search` and `catalog`. Pass `--country` only when you know it (from `config show` after the install widget, or ask). Example when the buyer is GB:
 
 ```bash
 npx --yes @shopify/shop-cli --profile-url "https://cdn.jsdelivr.net/gh/steve228uk/grok-bot-ucp-profile@main/ucp-agent-profile.json" --country GB search "…"
@@ -43,10 +43,29 @@ That profile's identity name is **Grok Bot (SpaceXAI)**. Do not omit `--profile-
 
 If npx itself is blocked, fall back to Shop's direct catalog MCP + auth/checkout API (the two reference URLs) and still send `meta.ucp-agent.profile` as that same URL. Do not run `auth` during pack install. Do not install Cursor's Shopify *developer* plugin.
 
+## Country (do not invent)
+
+Shop catalog is an **augment** to [Merchant agentic commerce](sand-workflow:merchant-agentic-commerce) search (Woo, UCP, HTML). Do not skip non-Shopify merchants.
+
+Never invent a country. Never assume GB. Never infer it from the model, a name, or a phone prefix.
+
+Country comes from `npx --yes @shopify/shop-cli config show` after the pack install widget (`config set-country`), or **ask** if still unset. Do not invent. A signed-in Shop account does **not** set country: `auth status` has no country field, and `config show` is `{"country": null}` until someone runs `config set-country`.
+
+Shop CLI `--country` is **optional**. If you omit it, the CLI default is **US**. Official Shop rule: pass `--country` / `--currency` / `--ships-to` only when you actually know them.
+
+When you know the buyer country, pass `--country XX` on catalog calls, plus matching `--currency` / `--ships-to`. Always pass `--profile-url` on `search` and `catalog`.
+
+Examples below may show `--country GB` **only as an example when the buyer is GB**. Substitute the buyer's actual country.
+
+```bash
+npx --yes @shopify/shop-cli config show
+npx --yes @shopify/shop-cli config set-country XX
+```
+
 ## Shopping flow (Shop's order, Grok Bot chrome)
 
 1. **Offer sign-in** once if signed-out, before any product card. Widget, then **STOP**.
-2. **Search** with `npx --yes @shopify/shop-cli --profile-url "https://cdn.jsdelivr.net/gh/steve228uk/grok-bot-ucp-profile@main/ucp-agent-profile.json" --country GB search` (or catalog MCP). Never web-search unless they asked.
+2. **Search** with `npx --yes @shopify/shop-cli --profile-url "https://cdn.jsdelivr.net/gh/steve228uk/grok-bot-ucp-profile@main/ucp-agent-profile.json"` and `--country XX` from `config show` (or ask). Never invent country. Never web-search unless they asked. Example when the buyer is GB: add `--country GB`.
 3. **Show results** — one Grok Bot card per product (image + `[Name](url)`), then an interest widget. Not Shop's template. Not a prose summary dump.
 4. **Visualization** (optional) for clothing/shoes/furniture if they send a photo — edit *their* photo, say it is approximate.
 5. **Checkout** on the merchant domain via Shop agent checkout / Shop Pay. Confirm-before-pay widget, then `--confirm`.
@@ -54,7 +73,7 @@ If npx itself is blocked, fall back to Shop's direct catalog MCP + auth/checkout
 
 ## Commands
 
-Default `--country GB --currency GBP --ships-to GB` unless the buyer is elsewhere. `--country` is a **global** flag (before the subcommand). `--currency` is on `search`. `--ships-to` is the hard destination filter. Default `--ships-from` to the ships-to country; drop it if results are thin. Prefer `--format md`. Keep `--limit` small (6–8).
+Do **not** default `--country GB`. Country comes from `config show` after the install widget, or ask. Never invent. `--country` is optional; omit it and the CLI defaults to **US**. A signed-in Shop account does not set it. `--country` is a **global** flag (before the subcommand). `--currency` is on `search`. `--ships-to` is the hard destination filter. Default `--ships-from` to the ships-to country when you know it; drop it if results are thin. Examples may show GB only when the buyer is GB. Prefer `--format md`. Keep `--limit` small (6–8).
 
 ```text
 global                   --profile-url <uri>  --country <ISO2>  --format md|json
@@ -198,4 +217,6 @@ Only if they send a photo and the item is visual. Edit **that** photo. Never a t
 - Never `npm install -g @shopify/shop-cli`. Always `npx --yes @shopify/shop-cli`.
 - Always `--profile-url` with the Grok Bot UCP profile on `search` and `catalog`.
 - Always `--device-name "Grok Bot"` on Shop device-code.
+- Never invent `--country` / `--ships-to` / currency. Ask if unknown. Shop account login does not set country.
+- Shop catalog is an augment to merchant search. Do not skip non-Shopify merchants.
 - Never install Shop's SKILL.md as the Grok Bot card format.

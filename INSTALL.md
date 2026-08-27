@@ -25,7 +25,7 @@ A shopping pack for Grok Bot:
 
 Do **not** install https://shop.app/SKILL.md as a Grok Bot skill (wrong card format). The Shop catalog skill wraps Shop's CLI via npx instead.
 
-UCP catalog, Woo Store API, and Stripe Onelink in the browser need **no CLI**. Shop Pay / Shop catalog use `npx --yes @shopify/shop-cli` (or Shop's direct catalog MCP if npx is blocked).
+UCP catalog, Woo Store API, and Stripe Onelink in the browser need **no CLI**. Shop Pay / Shop catalog use `npx --yes @shopify/shop-cli` (or Shop's direct catalog MCP if npx is blocked). Shop catalog is an **augment** (the merchant skill covers Woo, UCP, and other non-Shop origins).
 
 ## Steps
 
@@ -54,8 +54,12 @@ npx --yes @shopify/shop-cli <subcommand> …
 Catalog (`search` / `catalog`) must identify as Grok Bot. Pass this global flag BEFORE the subcommand:
 
 ```bash
-npx --yes @shopify/shop-cli --profile-url "https://cdn.jsdelivr.net/gh/steve228uk/grok-bot-ucp-profile@main/ucp-agent-profile.json" --country GB search "…"
+npx --yes @shopify/shop-cli --profile-url "https://cdn.jsdelivr.net/gh/steve228uk/grok-bot-ucp-profile@main/ucp-agent-profile.json" search "…"
 ```
+
+Pass `--country XX` only after buyer country is set (next steps). Never invent country; never assume GB.
+
+Shop catalog is an **augment**. The merchant skill covers Woo, UCP, HTML, and other non-Shop origins; do not treat Shop as the only search.
 
 `--device-name "Grok Bot"` is only for `auth device-code` (Shop Connections). Do not use the agent name or hostname.
 
@@ -100,11 +104,46 @@ The empty `echo -n ''` unlocks (or creates) the default keyring with no password
 
 On macOS, Keychain should already work; if it does not, say so instead of apt.
 
-Retry `auth status`. It should no longer mention keytar. Then continue to sign-in.
+Retry `auth status`. It should no longer mention keytar. Then continue to buyer country.
 
 If they skip, continue. Shop search stays unsigned.
 
-### 4. Shop sign-in — widget, then stop
+### 4. Buyer country — widget, then stop
+
+Run:
+
+```bash
+npx --yes @shopify/shop-cli config show
+```
+
+If `country` is already a 2-letter code, skip this widget and say so.
+
+Shop CLI `--country` is **optional**. Omitting it makes the CLI default **US**. A signed-in Shop account does **not** set it (`auth status` has no country; `config show` is `{"country": null}` until `config set-country`).
+
+Never invent a country. Never assume GB. Never infer it from the model, a name, or a phone prefix.
+
+If country is not set, send a Grok Bot question widget (**this ends the turn**). `allowCustom`: true.
+
+- `prompt`: "Which country should Shop use for prices and shipping?"
+- `helpText`: "If yours isn't listed, type a two-letter ISO country code (for example IE)."
+- Options (exactly these five):
+  - `{ "label": "United States (US)", "value": "Set Shop country to US" }`
+  - `{ "label": "United Kingdom (GB)", "value": "Set Shop country to GB" }`
+  - `{ "label": "Canada (CA)", "value": "Set Shop country to CA" }`
+  - `{ "label": "Australia (AU)", "value": "Set Shop country to AU" }`
+  - `{ "label": "Germany (DE)", "value": "Set Shop country to DE" }`
+
+Custom answers: accept only a 2-letter ISO country code; uppercase it. If invalid, send the widget again.
+
+Then:
+
+```bash
+npx --yes @shopify/shop-cli config set-country XX
+```
+
+After that, pass `--country XX` on catalog calls, plus matching `--currency` / `--ships-to` when you know them.
+
+### 5. Shop sign-in — widget, then stop
 
 If `auth status` is signed-out (and secret storage works), offer sign-in once. Widget (**ends the turn**):
 
@@ -122,7 +161,7 @@ If they sign in:
 
 If they continue unsigned, skip poll.
 
-### 5. Optional Link CLI — widget, then stop
+### 6. Optional Link CLI — widget, then stop
 
 On the agent's computer, check whether `link-cli` already exists.
 
@@ -145,7 +184,7 @@ npm install --global @stripe/link-cli
 
 Do not run `link-cli auth login` during install.
 
-### 6. Buyer agent — widget, then stop
+### 7. Buyer agent — widget, then stop
 
 If a teammate named Buyer already exists, skip this and say it is already there.
 
@@ -158,13 +197,14 @@ Otherwise send a question widget (**ends the turn**):
 
 If they confirm, `CreateAgent` with name `Buyer` and the description from `agents/buyer.md` (use the user's name if you know it). Then stop. Do not message Buyer unless they asked.
 
-### 7. Done
+### 8. Done
 
 Tell them:
 
 - Skills installed (names).
 - Shop CLI is invoked with `npx --yes @shopify/shop-cli` (not installed globally).
 - Whether libsecret + CLI keyring unlock landed (or that you skipped).
+- Which buyer country was set (or that it was already set).
 - Whether they signed in to Shop (or unsigned).
 - Whether Link CLI landed (or that you skipped).
 - Whether Buyer was created.
@@ -182,3 +222,5 @@ Tell them:
 - Confirm-before-pay stays a widget.
 - Grok Bot has npm, not pnpm. Do not run pnpm install commands.
 - Always --profile-url with the Grok Bot UCP profile on search and catalog.
+- Never invent country. Ask at setup. Do not assume GB. A Shop account does not set country.
+- Shop is an augment (merchant skill covers Woo/etc).

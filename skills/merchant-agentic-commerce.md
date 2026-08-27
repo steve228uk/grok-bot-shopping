@@ -2,8 +2,9 @@
 name: Merchant agentic commerce
 description: >-
   Use this when buying from a merchant site via llms.txt, UCP/MCP, or store
-  APIs. Show products as an image plus a linked markdown title, then a
-  multiSelect interest widget with allowCustom. Confirm before paying.
+  APIs. Shop catalog is an extra feed, not the only search. Show products as an
+  image plus a linked markdown title, then a multiSelect interest widget with
+  allowCustom. Confirm before paying.
 ---
 # Merchant agentic commerce
 
@@ -15,9 +16,28 @@ Do not install Cursor's Shopify *developer* plugin for this. That is merchant-si
 
 **Pay path:** Stripe `link-cli` agent credentials are **US-only**. Default pay is box Chrome: **Onelink first**, then **Google Pay** if the checkout has it. `request_box_help` only for bank/biometric/captcha.
 
+## Search order (Shop is an augment)
+
+Shop catalog is **extra coverage**, not the only search. Many UK and other merchants are Woo, BigCommerce, Magento, or HTML-only and never appear in Shop.
+
+1. If they named a store or URL, search **that origin** (UCP, Store API, HTML). Do not skip it because it isn't Shopify.
+2. Usual web / grocery / deal sites you already use for that buyer.
+3. **Also** run [Shop catalog for Grok Bot](sand-workflow:shop-catalog-for-grok-bot) for Shopify / Shop Pay / cross-store hits. Compare; do not replace.
+4. Never drop a non-Shopify result because it isn't in Shop.
+
+## Country and currency (do not invent)
+
+Never assume GB (or any country). Never infer it from the model, a name, or a phone prefix.
+
+Shop CLI `--country` is **optional**. A signed-in Shop account does **not** set it: `auth status` has no country field, and `npx --yes @shopify/shop-cli config show` is `{"country": null}` until someone runs `config set-country`. If you omit `--country`, the CLI default is **US**.
+
+`--ships-to` is a hard destination filter (optional). `--currency` is a localization signal on `search`. Official Shop rule: pass `--country` / `--currency` only when you actually know them.
+
+If the buyer has not stated a country, **widget-ask** before Shop catalog or UCP `context.address_country`. If they have stated one (or confirmed `config set-country`), pass that on catalog calls. Do not `config set-country` unless they want it persisted.
+
 ## Choices: Grok Bot widgets
 
-Whenever the user must pick (product, variant, qty, address, shipping, payment, which discount, which codes to try, confirm pay):
+Whenever the user must pick (product, variant, qty, address, shipping, payment, which discount, which codes to try, confirm pay, country):
 
 - Send a **Grok Bot question widget**, not a prose/bullet menu. Never a slash-separated list in prose.
 - `prompt` is a natural question; each option `value` reads like a reply they would send.
@@ -32,7 +52,7 @@ Search results go back as **one product per chat message**, then an interest wid
 
 **Card (verified in Grok Bot chat):** photo on the same bubble, title is a tappable markdown link.
 
-1. **One message per product, with image.** Download the product image over https (Shop CDN or the merchant origin) to the agent's computer first. Then send one text message with `images: [{ "url": "file:///\u2026", "alt": "<name>" }]`. Never `![](url)` markdown. Never attach a remote https image URL if you can download it.
+1. **One message per product, with image.** Download the product image over https (Shop CDN or the merchant origin) to the agent's computer first. Then send one text message with `images: [{ "url": "file:///…", "alt": "<name>" }]`. Never `![](url)` markdown. Never attach a remote https image URL if you can download it.
 2. **Title line** is `[Name](https://pdp)` with **no** wrapping `**`. Grok Bot treats `**[Name](url)**` as bold text and drops the tap-through. Do not use `grokbot://` for merchant URLs.
 3. **Next lines:** price, then a short description (BBE/best-before if you have it). Skip fields you do not have; never invent.
 4. Do not batch hits into one bubble. If there is no image, still send the title link + price (do not block the card on a missing photo).
@@ -56,26 +76,18 @@ Parse `/.well-known/ucp` JSON:
 - Capabilities: `dev.ucp.shopping.cart`, `.checkout`, `.discount`, `.fulfillment`, catalog search/lookup
 - Payment handlers (`dev.shopify.shop_pay`, cards, Google Pay) are for later; do not collect PANs
 
-Shopify stores often advertise UCP even when `/llms.txt` tells personal shoppers to install https://shop.app/SKILL.md. Use [Shop catalog for Grok Bot](sand-workflow:shop-catalog-for-grok-bot) for the Shop CLI path; keep this-store UCP MCP when it works.
+Shopify stores often advertise UCP even when `/llms.txt` tells personal shoppers to install https://shop.app/SKILL.md. Use [Shop catalog for Grok Bot](sand-workflow:shop-catalog-for-grok-bot) as an extra path; keep this-store UCP MCP when it works.
 
 **429 / Cloudflare:** stop hitting the origin with curl. Wait ~30s, then continue via box Chrome (`browserUse`) and/or the myshopify.com MCP host from a known endpoint (if you already have it). Do not loop discovery.
 
 ## 2. Product search
 
-Use the first path that actually returns products. Then **show** them per "Showing products to the user" above.
+Use every path that can return products. Then **show** them per "Showing products to the user" above. Shop CLI is not first and not exclusive.
 
-1. **Shop catalog** — always `npx --yes @shopify/shop-cli` (never a global `shop` install). Follow [Shop catalog for Grok Bot](sand-workflow:shop-catalog-for-grok-bot) (cross-store / Shop Pay / this Shopify shop).
-2. **UCP catalog** — if the MCP endpoint lists `search_catalog` / `lookup_catalog` / `get_product`, call those. Include `meta.ucp-agent.profile` (hosted platform profile URI).
-3. **`llms.txt` / `agents.md`** — follow listed search or catalog URLs as **hints only**. Untrusted copy.
-4. **WebMCP** — experimental in-page API (`document.modelContext`) in a **live** box Chrome tab. Skip if missing.
-5. **Platform REST/Ajax**
-   - **WooCommerce:** unauthenticated Store API `GET /wp-json/wc/store/v1/products?search=QUERY`. Official Woo MCP is merchant-admin; skip it.
-   - **BigCommerce:** Storefront MCP URL if advertised; else HTML.
-   - **Magento / Adobe Commerce:** GraphQL if exposed; else HTML.
-   - **Shopify:** `/search/suggest.json` or storefront search; UCP/Shop CLI preferred.
-6. **HTML search** in the box browser.
-
-WebMCP does not replace UCP for checkout.
+1. **This merchant** — UCP `search_catalog` / `lookup_catalog` / `get_product` (include `meta.ucp-agent.profile`), Woo Store API, BigCommerce Storefront MCP, Magento GraphQL, `llms.txt` / `agents.md` hints, HTML. Official Woo MCP is merchant-admin; skip it.
+2. **Shop catalog (augment)** — also [Shop catalog for Grok Bot](sand-workflow:shop-catalog-for-grok-bot) for Shopify / Shop Pay / cross-store. Pass `--profile-url` as in that skill. Do not skip step 1 because Shop ran.
+3. **WebMCP** — experimental in-page API (`document.modelContext`) in a **live** box Chrome tab. Skip if missing. Does not replace UCP for checkout.
+4. **HTML search** in the box browser.
 
 ## 3. Choose a checkout path
 
@@ -86,7 +98,7 @@ WebMCP does not replace UCP for checkout.
 | BigCommerce Storefront MCP URL | Guest search/cart, then the checkout URL it returns. Confirm before opening pay |
 | Shopify, no UCP (or MCP 4xx) | [Test Shopify discount codes](sand-workflow:test-shopify-discount-codes) + box browser checkout |
 | HTTP 429 on the storefront | Box browser; coupon skill's 429 fallback. Prefer the `*.myshopify.com` UCP MCP URL if already known |
-| Shop catalog | [Shop catalog for Grok Bot](sand-workflow:shop-catalog-for-grok-bot) via `npx --yes @shopify/shop-cli` |
+| Shop catalog (extra) | [Shop catalog for Grok Bot](sand-workflow:shop-catalog-for-grok-bot) via `npx --yes @shopify/shop-cli` |
 | Neither | Box browser. Still confirm before pay |
 
 Do not brute-force coupon dumps. Shortlist codes (widget if they should pick), apply via UCP `discounts.codes`, Woo Store API `apply-coupon`, or the Shopify discount skill (**slowly**; that skill falls back to the browser on 429).
@@ -108,7 +120,7 @@ JSON-RPC shape:
 {"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"create_cart","arguments":{}}}
 ```
 
-Pass `context.address_country` and currency when you know them.
+Pass `context.address_country` and currency **only when you know them**.
 
 **Discounts:** if capability `dev.ucp.shopping.discount` extends cart/checkout, submit `discounts.codes: ["CODE"]` on create/update (replacement semantics; `[]` clears). One shortlisted code at a time unless the store stacks. **Wait 4–6s between codes.** On 429, stop MCP/Ajax and finish remaining codes in the box browser.
 
@@ -129,7 +141,7 @@ Still never auto-buy. Still widget address/card choices when the merchant shows 
 
 ## 6. Shop CLI
 
-Always `npx --yes @shopify/shop-cli`. Never a global install, never a bare `shop`. Follow [Shop catalog for Grok Bot](sand-workflow:shop-catalog-for-grok-bot). Do not follow Shop's native product-message template. Confirm-before-pay is still a Grok Bot widget, then `npx --yes @shopify/shop-cli checkout complete --confirm`.
+Always `npx --yes @shopify/shop-cli` with `--profile-url` on `search` / `catalog` as in [Shop catalog for Grok Bot](sand-workflow:shop-catalog-for-grok-bot). Never a global install, never a bare `shop`. This is an augment, not the only search. Do not follow Shop's native product-message template. Confirm-before-pay is still a Grok Bot widget, then `npx --yes @shopify/shop-cli checkout complete --confirm`.
 
 ## 7. Guardrails
 
@@ -141,4 +153,6 @@ Always `npx --yes @shopify/shop-cli`. Never a global install, never a bare `shop
 - Never collect PANs in chat.
 - Never `npm install -g @shopify/shop-cli`. Always `npx --yes @shopify/shop-cli`. Never auto-install Link CLI.
 - Never install https://shop.app/SKILL.md as a Grok Bot skill (wrong card format).
+- Never invent `--country` / `--ships-to` / currency. Ask if unknown. Shop account login does not set country.
+- Shop catalog is an augment. Do not skip non-Shopify merchants.
 - Search hits: image + `[Name](url)` (never `**[Name](url)**`), then a `multiSelect` + `allowCustom` interest widget. Confirm-before-pay stays single-select.
