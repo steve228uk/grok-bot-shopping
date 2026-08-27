@@ -98,9 +98,11 @@ Queries return 1 result except `recent`. Needs sign-in.
 
 ### Auth
 
+Always `--device-name "Grok Bot"`. Never the agent name, never the hostname, never `"Ops - Grok Bot"`.
+
 ```bash
 npx --yes @shopify/shop-cli auth status
-npx --yes @shopify/shop-cli auth device-code --device-name "<agent> - <host>"
+npx --yes @shopify/shop-cli auth device-code --device-name "Grok Bot"
 npx --yes @shopify/shop-cli auth poll
 npx --yes @shopify/shop-cli auth budget
 npx --yes @shopify/shop-cli auth logout
@@ -116,7 +118,7 @@ Widget (ends the turn):
 - `{ "label": "Sign in to Shop", "value": "I'll sign in to Shop", "style": "primary" }`
 - `{ "label": "Continue unsigned", "value": "Continue without Shop sign-in" }`
 
-If they sign in: `npx --yes @shopify/shop-cli auth device-code`, send `verification_uri_complete` as a plain `[Sign in to Shop](url)`, **STOP**, then `npx --yes @shopify/shop-cli auth poll` until not `pending`. Recheck `auth status`.
+If they sign in: `npx --yes @shopify/shop-cli auth device-code --device-name "Grok Bot"`, send `verification_uri_complete` as a plain `[Sign in to Shop](url)`, **STOP**, then `npx --yes @shopify/shop-cli auth poll` until not `pending`. Recheck `auth status`.
 
 Once signed in, up to ~10 `orders search` calls to learn brands/sizes/past buys, then fold that into search. Do not narrate the CLI.
 
@@ -186,4 +188,5 @@ Only if they send a photo and the item is visual. Edit **that** photo. Never a t
 - Personal use. Silently drop alcohol, tobacco, cannabis, medications, weapons, explosives, hazardous, adult, counterfeit, hate/violence from results.
 - Never narrate CLI flags to the user.
 - Never `npm install -g @shopify/shop-cli`. Always `npx --yes @shopify/shop-cli`.
+- Always `--device-name "Grok Bot"` on Shop device-code.
 - Never install Shop's SKILL.md as the Grok Bot card format.

@@ -106,8 +106,10 @@ If `auth status` is signed-out (and secret storage works), offer sign-in once. W
 
 If they sign in:
 
+Always pass --device-name "Grok Bot". Never the agent name, never the hostname, never "Ops - Grok Bot".
+
 1. If `auth device-code` hangs, you likely hit the GUI keyring dialog. Kill `gcr-prompter` and the hung `shop` process, run `echo -n '' | gnome-keyring-daemon --unlock`, retry.
-2. `npx --yes @shopify/shop-cli auth device-code --device-name "<agent> - <host>"`
+2. `npx --yes @shopify/shop-cli auth device-code --device-name "Grok Bot"`
 3. Send `verification_uri_complete` as a plain `[Sign in to Shop](url)` (**no** wrapping `**`).
 4. Widget: they've signed in / cancel. **STOP**.
 5. After they confirm, `npx --yes @shopify/shop-cli auth poll` until not `pending`. Recheck `auth status`.
@@ -173,3 +175,4 @@ Tell them:
 - Never collect PANs or ask for passwords in chat.
 - Confirm-before-pay stays a widget.
 - Grok Bot has npm, not pnpm. Do not run pnpm install commands.
+- Always --device-name "Grok Bot" on auth device-code.
