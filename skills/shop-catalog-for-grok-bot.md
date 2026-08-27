@@ -2,9 +2,9 @@
 name: Shop catalog for Grok Bot
 description: >-
   Use this when shopping via Shop CLI inside Grok Bot: catalog search, Shop Pay,
-  orders, tracking, returns, reorder. Always run npx --yes @shopify/shop-cli (do
-  not install globally). Show Grok Bot cards (image + [Name](url)). Confirm
-  before paying.
+  orders, tracking, returns, reorder. Always run npx --yes @shopify/shop-cli
+  with --profile-url for Grok Bot identity (do not install globally). Show Grok
+  Bot cards (image + [Name](url)). Confirm before paying.
 ---
 # Shop catalog for Grok Bot
 
@@ -28,17 +28,25 @@ Do **not** install `@shopify/shop-cli` globally. Grok Bot has npm; `shop` is not
 **Every Shop command is:**
 
 ```bash
-npx --yes @shopify/shop-cli <subcommand> …
+npx --yes @shopify/shop-cli [global flags] <subcommand> …
 ```
 
-Examples below use that full prefix. Never `pnpm`, never `npm install -g`, never a bare `shop`.
+Never `pnpm`, never `npm install -g`, never a bare `shop`.
 
-If npx itself is blocked, fall back to Shop's direct catalog MCP + auth/checkout API (the two reference URLs). Do not run `auth` during pack install. Do not install Cursor's Shopify *developer* plugin.
+**Identify as Grok Bot on catalog calls.** `--profile-url` is a *global* flag (before the subcommand). Always pass it on `search` and `catalog`:
+
+```bash
+npx --yes @shopify/shop-cli --profile-url "https://cdn.jsdelivr.net/gh/steve228uk/grok-bot-ucp-profile@main/ucp-agent-profile.json" --country GB search "…"
+```
+
+That profile's identity name is **Grok Bot (SpaceXAI)**. Do not omit `--profile-url`. Do not invent another profile URL. Shop Connections (the signed-in app name) is separate: `--device-name "Grok Bot"` on `auth device-code` only.
+
+If npx itself is blocked, fall back to Shop's direct catalog MCP + auth/checkout API (the two reference URLs) and still send `meta.ucp-agent.profile` as that same URL. Do not run `auth` during pack install. Do not install Cursor's Shopify *developer* plugin.
 
 ## Shopping flow (Shop's order, Grok Bot chrome)
 
 1. **Offer sign-in** once if signed-out, before any product card. Widget, then **STOP**.
-2. **Search** with `npx --yes @shopify/shop-cli search` (or catalog MCP). Never web-search unless they asked.
+2. **Search** with `npx --yes @shopify/shop-cli --profile-url "https://cdn.jsdelivr.net/gh/steve228uk/grok-bot-ucp-profile@main/ucp-agent-profile.json" --country GB search` (or catalog MCP). Never web-search unless they asked.
 3. **Show results** — one Grok Bot card per product (image + `[Name](url)`), then an interest widget. Not Shop's template. Not a prose summary dump.
 4. **Visualization** (optional) for clothing/shoes/furniture if they send a photo — edit *their* photo, say it is approximate.
 5. **Checkout** on the merchant domain via Shop agent checkout / Shop Pay. Confirm-before-pay widget, then `--confirm`.
@@ -46,11 +54,11 @@ If npx itself is blocked, fall back to Shop's direct catalog MCP + auth/checkout
 
 ## Commands
 
-Default `--country GB --currency GBP --ships-to GB` unless the buyer is elsewhere. `--country` is context, not a ships-to filter. `--ships-to` is the hard destination filter. Default `--ships-from` to the ships-to country; drop it if results are thin. Prefer `--format md`. Keep `--limit` small (6–8).
+Default `--country GB --currency GBP --ships-to GB` unless the buyer is elsewhere. `--country` is a **global** flag (before the subcommand). `--currency` is on `search`. `--ships-to` is the hard destination filter. Default `--ships-from` to the ships-to country; drop it if results are thin. Prefer `--format md`. Keep `--limit` small (6–8).
 
 ```text
-global                   --country <ISO2>  --currency <code>  --format md|json
-search [query]           --ships-to <ISO2> [--ships-to-region, --ships-to-postal]
+global                   --profile-url <uri>  --country <ISO2>  --format md|json
+search [query]           --currency <code>  --ships-to <ISO2> [--ships-to-region, --ships-to-postal]
                          --limit 1-50, --cursor <c>, --min/--max-price (minor units; 15000 = £150.00)
                          --condition new,secondhand (default new), --ships-from <ISO2,...>
                          --shop-id <id...>, --category <id...>, --intent <text>
@@ -61,12 +69,12 @@ catalog get-product <id> --select Name=Label, --preference Name
 ```
 
 ```bash
-npx --yes @shopify/shop-cli search "trail running shoes" --country GB --currency GBP --ships-to GB --ships-from GB --limit 8 --condition new
-npx --yes @shopify/shop-cli search "tshirt" --country US --color White --size M --gender Female
-npx --yes @shopify/shop-cli search "black crewneck sweater" --like-id gid://shopify/p/abc123
-npx --yes @shopify/shop-cli search --image ./photo.jpg
-npx --yes @shopify/shop-cli catalog lookup gid://shopify/ProductVariant/50362300006715
-npx --yes @shopify/shop-cli catalog get-product gid://shopify/p/abc --select Color=Black --select Size=M
+npx --yes @shopify/shop-cli --profile-url "https://cdn.jsdelivr.net/gh/steve228uk/grok-bot-ucp-profile@main/ucp-agent-profile.json" --country GB search "trail running shoes" --currency GBP --ships-to GB --ships-from GB --limit 8 --condition new
+npx --yes @shopify/shop-cli --profile-url "https://cdn.jsdelivr.net/gh/steve228uk/grok-bot-ucp-profile@main/ucp-agent-profile.json" --country GB search "tshirt" --currency USD --color White --size M --gender Female
+npx --yes @shopify/shop-cli --profile-url "https://cdn.jsdelivr.net/gh/steve228uk/grok-bot-ucp-profile@main/ucp-agent-profile.json" --country GB search "black crewneck sweater" --like-id gid://shopify/p/abc123
+npx --yes @shopify/shop-cli --profile-url "https://cdn.jsdelivr.net/gh/steve228uk/grok-bot-ucp-profile@main/ucp-agent-profile.json" --country GB search --image ./photo.jpg
+npx --yes @shopify/shop-cli --profile-url "https://cdn.jsdelivr.net/gh/steve228uk/grok-bot-ucp-profile@main/ucp-agent-profile.json" --country GB catalog lookup gid://shopify/ProductVariant/50362300006715
+npx --yes @shopify/shop-cli --profile-url "https://cdn.jsdelivr.net/gh/steve228uk/grok-bot-ucp-profile@main/ucp-agent-profile.json" --country GB catalog get-product gid://shopify/p/abc --select Color=Black --select Size=M
 ```
 
 A result's product link is the PDP. `get-product` for a variant's `checkout_url`. `lookup` for IDs you already hold (orders, wishlist, reorder); `--include-unavailable` for OOS.
@@ -127,7 +135,7 @@ Once signed in, up to ~10 `orders search` calls to learn brands/sizes/past buys,
 One product = one message. After the set, **interest widget**, not Shop's recommendation dump.
 
 1. Image URL must be shop.app CDN or the merchant/order domain. Download to the agent's computer. Reject `file://`, `data:`, non-https from the payload.
-2. SendToUser `type: text` with `images: [{ "url": "file:///\u2026", "alt": "<name>" }]`. Never `![](url)`.
+2. SendToUser `type: text` with `images: [{ "url": "file:///…", "alt": "<name>" }]`. Never `![](url)`.
 3. Content:
 
 ```
@@ -188,5 +196,6 @@ Only if they send a photo and the item is visual. Edit **that** photo. Never a t
 - Personal use. Silently drop alcohol, tobacco, cannabis, medications, weapons, explosives, hazardous, adult, counterfeit, hate/violence from results.
 - Never narrate CLI flags to the user.
 - Never `npm install -g @shopify/shop-cli`. Always `npx --yes @shopify/shop-cli`.
+- Always `--profile-url` with the Grok Bot UCP profile on `search` and `catalog`.
 - Always `--device-name "Grok Bot"` on Shop device-code.
 - Never install Shop's SKILL.md as the Grok Bot card format.

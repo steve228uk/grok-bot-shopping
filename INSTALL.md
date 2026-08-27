@@ -51,6 +51,14 @@ Do not install `@shopify/shop-cli` globally. Do not check whether `shop` is on P
 npx --yes @shopify/shop-cli <subcommand> …
 ```
 
+Catalog (`search` / `catalog`) must identify as Grok Bot. Pass this global flag BEFORE the subcommand:
+
+```bash
+npx --yes @shopify/shop-cli --profile-url "https://cdn.jsdelivr.net/gh/steve228uk/grok-bot-ucp-profile@main/ucp-agent-profile.json" --country GB search "…"
+```
+
+`--device-name "Grok Bot"` is only for `auth device-code` (Shop Connections). Do not use the agent name or hostname.
+
 Grok Bot's computer has **npm**, not pnpm. `--yes` skips the npx prompt. Do not run `auth login` / `auth device-code` in this step.
 
 If npx is blocked, follow https://shop.app/references/catalog-mcp.md and https://shop.app/references/direct-api.md from the Shop catalog skill.
@@ -106,10 +114,8 @@ If `auth status` is signed-out (and secret storage works), offer sign-in once. W
 
 If they sign in:
 
-Always pass --device-name "Grok Bot". Never the agent name, never the hostname, never "Ops - Grok Bot".
-
 1. If `auth device-code` hangs, you likely hit the GUI keyring dialog. Kill `gcr-prompter` and the hung `shop` process, run `echo -n '' | gnome-keyring-daemon --unlock`, retry.
-2. `npx --yes @shopify/shop-cli auth device-code --device-name "Grok Bot"`
+2. `npx --yes @shopify/shop-cli auth device-code --device-name "<agent> - <host>"`
 3. Send `verification_uri_complete` as a plain `[Sign in to Shop](url)` (**no** wrapping `**`).
 4. Widget: they've signed in / cancel. **STOP**.
 5. After they confirm, `npx --yes @shopify/shop-cli auth poll` until not `pending`. Recheck `auth status`.
@@ -175,4 +181,4 @@ Tell them:
 - Never collect PANs or ask for passwords in chat.
 - Confirm-before-pay stays a widget.
 - Grok Bot has npm, not pnpm. Do not run pnpm install commands.
-- Always --device-name "Grok Bot" on auth device-code.
+- Always --profile-url with the Grok Bot UCP profile on search and catalog.
