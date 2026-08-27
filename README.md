@@ -13,7 +13,13 @@ Follow INSTALL.md.
 
 Grok Bot will fetch the skills, ask which optional CLIs to install (Shop CLI, Link CLI), and ask whether to create a **Buyer** agent.
 
-Nothing is required for UCP search or Onelink in the browser. Shop Pay and the Shop catalog need Shop CLI (`pnpm add --global @shopify/shop-cli`).
+Nothing is required for UCP search or Onelink in the browser. Shop Pay and the Shop catalog need Shop CLI:
+
+```bash
+npm install --global @shopify/shop-cli
+```
+
+Grok Bot has **npm**, not pnpm. If `shop` is missing from PATH after install, use `npx --yes @shopify/shop-cli`.
 
 Do not install https://shop.app/SKILL.md as a Grok Bot skill. This pack wraps Shop's CLI instead.
 

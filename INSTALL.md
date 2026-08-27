@@ -45,6 +45,8 @@ Save each skill with Grok Bot skill-write using the **id** above, the `name` and
 
 On the agent's computer, check Node and whether `shop` / `link-cli` already exist.
 
+Grok Bot's computer has **npm**, not pnpm. Always use npm.
+
 Then send a Grok Bot question widget (**this ends the turn**). Do not install until they answer.
 
 - `prompt`: "Which shopping CLIs should I install? None are required for UCP or Onelink in the browser. Shop CLI is required for Shop Pay and the Shop catalog."
@@ -54,12 +56,14 @@ Then send a Grok Bot question widget (**this ends the turn**). Do not install un
   - `{ "label": "Link CLI (US agent wallet)", "value": "Install Link CLI" }`
 - If both are already installed, skip the widget and say so.
 
-Dismiss or an empty pick means skip. If they picked Shop CLI, use Shop's install (prefer pnpm, else npm):
+Dismiss or an empty pick means skip. If they picked Shop CLI:
 
 ```bash
-pnpm add --global @shopify/shop-cli   # or: npm install --global @shopify/shop-cli
+npm install --global @shopify/shop-cli
 shop --help
 ```
+
+If `shop` is not on PATH, use `npx --yes @shopify/shop-cli` with the same subcommands.
 
 If they picked Link CLI:
 
@@ -100,3 +104,4 @@ Tell them:
 - Never install https://shop.app/SKILL.md as a Grok Bot skill.
 - Never collect PANs or ask for passwords in chat.
 - Confirm-before-pay stays a widget.
+- Grok Bot has npm, not pnpm. Do not run pnpm install commands.
