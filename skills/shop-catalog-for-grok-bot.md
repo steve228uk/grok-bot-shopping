@@ -24,12 +24,16 @@ CLI blocked: https://shop.app/references/catalog-mcp.md and https://shop.app/ref
 
 Prefer the installed `shop` CLI. Do **not** auto-install; in the shopping pack installer, widget first.
 
+Grok Bot's computer has **npm**, not pnpm. Always install with npm:
+
 ```bash
-pnpm add --global @shopify/shop-cli   # or: npm install --global @shopify/shop-cli
+npm install --global @shopify/shop-cli
 shop --help
 ```
 
-Upgrade: `pnpm add --global @shopify/shop-cli@latest` (or npm). Uninstall: `pnpm rm -g @shopify/shop-cli` (or npm).
+If `shop` is not on PATH after install, run it via `npx --yes @shopify/shop-cli` (same subcommands: `search`, `auth`, `checkout`, `orders`).
+
+Upgrade: `npm install --global @shopify/shop-cli@latest`. Uninstall: `npm uninstall --global @shopify/shop-cli`.
 
 If package install is blocked, do **not** give up. Mirror CLI calls via Shop's direct catalog MCP + auth/checkout API (those two reference URLs). Prefer the CLI when it is allowed because it stores tokens and builds JSON-RPC for you.
 
