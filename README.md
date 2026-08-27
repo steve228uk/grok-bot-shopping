@@ -23,6 +23,7 @@ Shop **sign-in** needs OS secret storage. On Linux that is libsecret (`libsecret
 
 Grok Bot has **npm**, not pnpm. Do not install https://shop.app/SKILL.md as a Grok Bot skill. This pack wraps Shop's CLI via npx instead.
 
+
 ## Shop Pay agent pay (required for CLI complete)
 
 Sign-in alone does **not** let Grok Bot finish payment in Shop CLI. For `checkout complete` you must:

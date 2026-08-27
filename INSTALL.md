@@ -154,7 +154,7 @@ If `auth status` is signed-out (and secret storage works), offer sign-in once. W
 If they sign in:
 
 1. If `auth device-code` hangs, you likely hit the GUI keyring dialog. Kill `gcr-prompter` and the hung `shop` process, run `echo -n '' | gnome-keyring-daemon --unlock`, retry.
-2. `npx --yes @shopify/shop-cli auth device-code --device-name "<agent> - <host>"`
+2. `npx --yes @shopify/shop-cli auth device-code --device-name "Grok Bot"`
 3. Send `verification_uri_complete` as a plain `[Sign in to Shop](url)` (**no** wrapping `**`).
 4. Widget: they've signed in / cancel. **STOP**.
 5. After they confirm, `npx --yes @shopify/shop-cli auth poll` until not `pending`. Recheck `auth status`.
@@ -252,4 +252,4 @@ Tell them:
 - Always --profile-url with the Grok Bot UCP profile on search and catalog.
 - Never invent country. Ask at setup. Do not assume GB. A Shop account does not set country.
 - Shop is an augment (merchant skill covers Woo/etc).
-- Never claim CLI can `checkout complete` without a Shop agent pay budget. Point them at Shop connections → **Allow agent to pay for me** + spend limit. Verify with `auth budget`.
+- Never claim CLI can `checkout complete` without a Shop agent pay budget. Point them at [Shop connections](https://shop.app/account/settings/connections) → **Allow agent to pay for me** + spend limit. Verify with `auth budget`.
