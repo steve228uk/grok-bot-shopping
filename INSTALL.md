@@ -161,7 +161,34 @@ If they sign in:
 
 If they continue unsigned, skip poll.
 
-### 6. Optional Link CLI — widget, then stop
+### 6. Shop Pay agent budget — tell the user, then stop
+
+CLI `checkout complete` only works when Shop has issued a delegated spend budget **and** the merchant returns a Shop Pay payment instrument. Sign-in alone is not enough.
+
+After Shop sign-in (or when they already signed in earlier), **tell them** they need this in the Shop app / [Shop connections](https://shop.app/account/settings/connections):
+
+1. Open the **Grok Bot** (or "Grok Bot (SpaceXAI)") connection.
+2. Toggle **Allow agent to pay for me** on.
+3. Set a **Spend limit** (Monthly / Weekly / Total) and an amount (for example £100).
+4. Confirm the bar shows remaining spend for the period.
+
+Then send a widget (**ends the turn**):
+
+- `prompt`: "Have you turned on Allow agent to pay for me in Shop connections?"
+- `{ "label": "Yes, agent pay is on", "value": "Shop agent pay is enabled", "style": "primary" }`
+- `{ "label": "Skip for now", "value": "Skip Shop agent pay budget" }`
+
+If they say yes:
+
+```bash
+npx --yes @shopify/shop-cli auth budget
+```
+
+Report `available`, `remaining_amount` (minor units), `currency`, and `renewal_type`. `available: false` means the toggle/limit is still off.
+
+If they skip, continue. Search and `checkout create` still work; `checkout complete` will not until a budget exists and the store issues instruments. Finish-in-Shop / continue_url still works without a budget.
+
+### 7. Optional Link CLI — widget, then stop
 
 On the agent's computer, check whether `link-cli` already exists.
 
@@ -184,7 +211,7 @@ npm install --global @stripe/link-cli
 
 Do not run `link-cli auth login` during install.
 
-### 7. Buyer agent — widget, then stop
+### 8. Buyer agent — widget, then stop
 
 If a teammate named Buyer already exists, skip this and say it is already there.
 
@@ -197,7 +224,7 @@ Otherwise send a question widget (**ends the turn**):
 
 If they confirm, `CreateAgent` with name `Buyer` and the description from `agents/buyer.md` (use the user's name if you know it). Then stop. Do not message Buyer unless they asked.
 
-### 8. Done
+### 9. Done
 
 Tell them:
 
@@ -206,6 +233,7 @@ Tell them:
 - Whether libsecret + CLI keyring unlock landed (or that you skipped).
 - Which buyer country was set (or that it was already set).
 - Whether they signed in to Shop (or unsigned).
+- Whether Shop agent pay / spend limit is on (`auth budget`), or that they skipped.
 - Whether Link CLI landed (or that you skipped).
 - Whether Buyer was created.
 - They can shop by asking you or @Buyer. Confirm-before-pay still applies.
@@ -224,3 +252,4 @@ Tell them:
 - Always --profile-url with the Grok Bot UCP profile on search and catalog.
 - Never invent country. Ask at setup. Do not assume GB. A Shop account does not set country.
 - Shop is an augment (merchant skill covers Woo/etc).
+- Never claim CLI can `checkout complete` without a Shop agent pay budget. Point them at Shop connections → **Allow agent to pay for me** + spend limit. Verify with `auth budget`.
