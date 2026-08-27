@@ -15,12 +15,15 @@ A shopping pack for Grok Bot:
 
 - Skills (save each as a user skill):
   - `skills/merchant-agentic-commerce.md` → id `merchant-agentic-commerce`
+  - `skills/shop-catalog-for-grok-bot.md` → id `shop-catalog-for-grok-bot`
   - `skills/test-shopify-discount-codes.md` → id `test-shopify-discount-codes`
   - `skills/stripe-onelink-checkout.md` → id `stripe-onelink-checkout`
 - Optional CLIs (ask first): `@shopify/shop-cli`, `@stripe/link-cli`
 - Optional teammate: a **Buyer** agent (`agents/buyer.md`)
 
-UCP catalog, Woo Store API, and Stripe Onelink in the browser need **no CLI**.
+Do **not** install https://shop.app/SKILL.md as a Grok Bot skill (wrong card format). The Shop catalog skill wraps Shop's CLI instead.
+
+UCP catalog, Woo Store API, and Stripe Onelink in the browser need **no CLI**. Shop Pay / Shop catalog need Shop CLI (or Shop's direct catalog MCP if the CLI cannot be installed).
 
 ## Steps
 
@@ -29,6 +32,7 @@ UCP catalog, Woo Store API, and Stripe Onelink in the browser need **no CLI**.
 Read these raw files (jsDelivr or GitHub raw is fine):
 
 - https://cdn.jsdelivr.net/gh/steve228uk/grok-bot-shopping@main/skills/merchant-agentic-commerce.md
+- https://cdn.jsdelivr.net/gh/steve228uk/grok-bot-shopping@main/skills/shop-catalog-for-grok-bot.md
 - https://cdn.jsdelivr.net/gh/steve228uk/grok-bot-shopping@main/skills/test-shopify-discount-codes.md
 - https://cdn.jsdelivr.net/gh/steve228uk/grok-bot-shopping@main/skills/stripe-onelink-checkout.md
 - https://cdn.jsdelivr.net/gh/steve228uk/grok-bot-shopping@main/agents/buyer.md
@@ -43,19 +47,27 @@ On the agent's computer, check Node and whether `shop` / `link-cli` already exis
 
 Then send a Grok Bot question widget (**this ends the turn**). Do not install until they answer.
 
-- `prompt`: "Which shopping CLIs should I install? None are required for UCP or Onelink in the browser."
+- `prompt`: "Which shopping CLIs should I install? None are required for UCP or Onelink in the browser. Shop CLI is required for Shop Pay and the Shop catalog."
 - `multiSelect: true`
 - Only real missing options:
   - `{ "label": "Shop CLI", "value": "Install Shop CLI" }`
   - `{ "label": "Link CLI (US agent wallet)", "value": "Install Link CLI" }`
 - If both are already installed, skip the widget and say so.
 
-Dismiss or an empty pick means skip. If they picked any:
+Dismiss or an empty pick means skip. If they picked Shop CLI, use Shop's install (prefer pnpm, else npm):
 
 ```bash
-npm install --global @shopify/shop-cli   # only if they picked Shop CLI
-npm install --global @stripe/link-cli    # only if they picked Link CLI
+pnpm add --global @shopify/shop-cli   # or: npm install --global @shopify/shop-cli
+shop --help
 ```
+
+If they picked Link CLI:
+
+```bash
+npm install --global @stripe/link-cli
+```
+
+If Shop CLI install is blocked, do not give up: follow https://shop.app/references/catalog-mcp.md and https://shop.app/references/direct-api.md from the Shop catalog skill.
 
 Do not run `shop auth` or `link-cli auth login` during install.
 
@@ -85,5 +97,6 @@ Tell them:
 
 - Never auto-install CLIs.
 - Never auto-create Buyer.
+- Never install https://shop.app/SKILL.md as a Grok Bot skill.
 - Never collect PANs or ask for passwords in chat.
 - Confirm-before-pay stays a widget.
