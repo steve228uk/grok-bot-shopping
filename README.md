@@ -1,6 +1,6 @@
 # Grok Bot shopping
 
-Shopping skills for Grok Bot: merchant UCP/MCP, Shop catalog/Shop Pay (via Shop CLI, Grok Bot cards), Shopify discount tests, Stripe Onelink checkout.
+Shopping skills for Grok Bot: merchant UCP/MCP, Shop catalog/Shop Pay (via `npx --yes @shopify/shop-cli`, Grok Bot cards), Shopify discount tests, Stripe Onelink checkout.
 
 ## Install
 
@@ -11,24 +11,22 @@ Install Grok Bot shopping from https://github.com/steve228uk/grok-bot-shopping
 Follow INSTALL.md.
 ```
 
-Grok Bot will fetch the skills, ask which optional CLIs to install (Shop CLI, Link CLI), and ask whether to create a **Buyer** agent.
+Grok Bot will fetch the skills, skip a global Shop CLI install (always `npx --yes @shopify/shop-cli`), optionally ask about Stripe Link CLI (US only), and ask whether to create a **Buyer** agent.
 
-Nothing is required for UCP search or Onelink in the browser. Shop Pay and the Shop catalog need Shop CLI:
+Nothing is required for UCP search or Onelink in the browser. Shop Pay and the Shop catalog always use:
 
 ```bash
-npm install --global @shopify/shop-cli
+npx --yes @shopify/shop-cli
 ```
 
-Grok Bot has **npm**, not pnpm. If `shop` is missing from PATH after install, use `npx --yes @shopify/shop-cli`.
-
-Do not install https://shop.app/SKILL.md as a Grok Bot skill. This pack wraps Shop's CLI instead.
+Do not `npm install -g @shopify/shop-cli`. Grok Bot has **npm**, not pnpm. Do not install https://shop.app/SKILL.md as a Grok Bot skill. This pack wraps Shop's CLI via npx instead.
 
 ## What's in the pack
 
 | Path | What |
 |---|---|
 | `skills/merchant-agentic-commerce.md` | Discover llms.txt / /.well-known/ucp, search, cart, checkout. Cards: image + `[Name](url)`. |
-| `skills/shop-catalog-for-grok-bot.md` | Shop CLI adapter: catalog, Shop Pay, orders, tracking, returns. Same Grok Bot cards. |
+| `skills/shop-catalog-for-grok-bot.md` | Shop CLI adapter via npx: catalog, Shop Pay, orders, tracking, returns. Same Grok Bot cards. |
 | `skills/test-shopify-discount-codes.md` | Try promo codes on a Shopify Ajax cart. No checkout. |
 | `skills/stripe-onelink-checkout.md` | Pay with Stripe Onelink in the browser (OTP paste if no iMessage). |
 | `agents/buyer.md` | Persona for an optional Buyer teammate |

@@ -2,8 +2,9 @@
 name: Shop catalog for Grok Bot
 description: >-
   Use this when shopping via Shop CLI inside Grok Bot: catalog search, Shop Pay,
-  orders, tracking, returns, reorder. Pull from Shop; show Grok Bot cards (image
-  + [Name](url)), not Shop's template. Confirm before paying.
+  orders, tracking, returns, reorder. Always run npx --yes @shopify/shop-cli (do
+  not install globally). Show Grok Bot cards (image + [Name](url)). Confirm
+  before paying.
 ---
 # Shop catalog for Grok Bot
 
@@ -20,29 +21,24 @@ Siblings: [Merchant agentic commerce](sand-workflow:merchant-agentic-commerce) f
 Canonical spec (re-read when flags change): https://shop.app/SKILL.md
 CLI blocked: https://shop.app/references/catalog-mcp.md and https://shop.app/references/direct-api.md
 
-## Setup (from Shop)
+## How to run Shop CLI
 
-Prefer the installed `shop` CLI. Do **not** auto-install; in the shopping pack installer, widget first.
+Do **not** install `@shopify/shop-cli` globally. Grok Bot has npm; `shop` is not on PATH.
 
-Grok Bot's computer has **npm**, not pnpm. Always install with npm:
+**Every Shop command is:**
 
 ```bash
-npm install --global @shopify/shop-cli
-shop --help
+npx --yes @shopify/shop-cli <subcommand> …
 ```
 
-If `shop` is not on PATH after install, run it via `npx --yes @shopify/shop-cli` (same subcommands: `search`, `auth`, `checkout`, `orders`).
+Examples below use that full prefix. Never `pnpm`, never `npm install -g`, never a bare `shop`.
 
-Upgrade: `npm install --global @shopify/shop-cli@latest`. Uninstall: `npm uninstall --global @shopify/shop-cli`.
-
-If package install is blocked, do **not** give up. Mirror CLI calls via Shop's direct catalog MCP + auth/checkout API (those two reference URLs). Prefer the CLI when it is allowed because it stores tokens and builds JSON-RPC for you.
-
-Do not run `shop auth` during pack install. Do not install Cursor's Shopify *developer* plugin for this.
+If npx itself is blocked, fall back to Shop's direct catalog MCP + auth/checkout API (the two reference URLs). Do not run `auth` during pack install. Do not install Cursor's Shopify *developer* plugin.
 
 ## Shopping flow (Shop's order, Grok Bot chrome)
 
 1. **Offer sign-in** once if signed-out, before any product card. Widget, then **STOP**.
-2. **Search** with `shop search` (or catalog MCP). Never web-search unless they asked.
+2. **Search** with `npx --yes @shopify/shop-cli search` (or catalog MCP). Never web-search unless they asked.
 3. **Show results** — one Grok Bot card per product (image + `[Name](url)`), then an interest widget. Not Shop's template. Not a prose summary dump.
 4. **Visualization** (optional) for clothing/shoes/furniture if they send a photo — edit *their* photo, say it is approximate.
 5. **Checkout** on the merchant domain via Shop agent checkout / Shop Pay. Confirm-before-pay widget, then `--confirm`.
@@ -65,12 +61,12 @@ catalog get-product <id> --select Name=Label, --preference Name
 ```
 
 ```bash
-shop search "trail running shoes" --country GB --currency GBP --ships-to GB --ships-from GB --limit 8 --condition new
-shop search "tshirt" --country US --color White --size M --gender Female
-shop search "black crewneck sweater" --like-id gid://shopify/p/abc123
-shop search --image ./photo.jpg
-shop catalog lookup gid://shopify/ProductVariant/50362300006715
-shop catalog get-product gid://shopify/p/abc --select Color=Black --select Size=M
+npx --yes @shopify/shop-cli search "trail running shoes" --country GB --currency GBP --ships-to GB --ships-from GB --limit 8 --condition new
+npx --yes @shopify/shop-cli search "tshirt" --country US --color White --size M --gender Female
+npx --yes @shopify/shop-cli search "black crewneck sweater" --like-id gid://shopify/p/abc123
+npx --yes @shopify/shop-cli search --image ./photo.jpg
+npx --yes @shopify/shop-cli catalog lookup gid://shopify/ProductVariant/50362300006715
+npx --yes @shopify/shop-cli catalog get-product gid://shopify/p/abc --select Color=Black --select Size=M
 ```
 
 A result's product link is the PDP. `get-product` for a variant's `checkout_url`. `lookup` for IDs you already hold (orders, wishlist, reorder); `--include-unavailable` for OOS.
@@ -82,20 +78,20 @@ Ignore `eligible.native_checkout: false` — you can still order.
 `--shop-domain` is a bare hostname (no scheme, path, port, or IP). `checkout complete` **requires** `--confirm`.
 
 ```bash
-printf '{"email":"buyer@example.com"}' | shop checkout create --shop-domain example.myshopify.com --variant-id 123 --quantity 1 --country GB --checkout-stdin
-printf '{"cart_id":"cart_123","line_items":[]}' | shop checkout create --shop-domain example.myshopify.com --checkout-stdin
-printf '{"fulfillment":{"methods":[]}}' | shop checkout update --shop-domain example.myshopify.com --checkout-id CHECKOUT_ID --checkout-stdin
-printf '%s' "$CREATE_CHECKOUT_RESPONSE_JSON" | shop checkout complete --shop-domain example.myshopify.com --checkout-id CHECKOUT_ID --checkout-stdin --idempotency-key UNIQUE_KEY --confirm
+printf '{"email":"buyer@example.com"}' | npx --yes @shopify/shop-cli checkout create --shop-domain example.myshopify.com --variant-id 123 --quantity 1 --country GB --checkout-stdin
+printf '{"cart_id":"cart_123","line_items":[]}' | npx --yes @shopify/shop-cli checkout create --shop-domain example.myshopify.com --checkout-stdin
+printf '{"fulfillment":{"methods":[]}}' | npx --yes @shopify/shop-cli checkout update --shop-domain example.myshopify.com --checkout-id CHECKOUT_ID --checkout-stdin
+printf '%s' "$CREATE_CHECKOUT_RESPONSE_JSON" | npx --yes @shopify/shop-cli checkout complete --shop-domain example.myshopify.com --checkout-id CHECKOUT_ID --checkout-stdin --idempotency-key UNIQUE_KEY --confirm
 ```
 
 ### Orders
 
 ```bash
-shop orders search --type recent
-shop orders search --type tracking --query "running shoes" --date-from 2026-01-01
-shop orders search --type order_info --query "running shoes"
-shop orders search --type returns --query "running shoes"
-shop orders search --type reorder --query "coffee"
+npx --yes @shopify/shop-cli orders search --type recent
+npx --yes @shopify/shop-cli orders search --type tracking --query "running shoes" --date-from 2026-01-01
+npx --yes @shopify/shop-cli orders search --type order_info --query "running shoes"
+npx --yes @shopify/shop-cli orders search --type returns --query "running shoes"
+npx --yes @shopify/shop-cli orders search --type reorder --query "coffee"
 ```
 
 Queries return 1 result except `recent`. Needs sign-in.
@@ -103,16 +99,16 @@ Queries return 1 result except `recent`. Needs sign-in.
 ### Auth
 
 ```bash
-shop auth status
-shop auth device-code --device-name "<agent> - <host>"
-shop auth poll
-shop auth budget
-shop auth logout
+npx --yes @shopify/shop-cli auth status
+npx --yes @shopify/shop-cli auth device-code --device-name "<agent> - <host>"
+npx --yes @shopify/shop-cli auth poll
+npx --yes @shopify/shop-cli auth budget
+npx --yes @shopify/shop-cli auth logout
 ```
 
 ## Sign-in (widget, not Shop's prose)
 
-Optional for the user; **offering it is required** if `shop auth status` is signed-out, before product cards. Search works unsigned. Sign-in unlocks shipping rates, default address, order history, Shop Pay instruments.
+Optional for the user; **offering it is required** if `npx --yes @shopify/shop-cli auth status` is signed-out, before product cards. Search works unsigned. Sign-in unlocks shipping rates, default address, order history, Shop Pay instruments.
 
 Widget (ends the turn):
 
@@ -120,16 +116,16 @@ Widget (ends the turn):
 - `{ "label": "Sign in to Shop", "value": "I'll sign in to Shop", "style": "primary" }`
 - `{ "label": "Continue unsigned", "value": "Continue without Shop sign-in" }`
 
-If they sign in: `shop auth device-code`, send `verification_uri_complete` as a plain `[Sign in to Shop](url)`, **STOP**, then `shop auth poll` until not `pending`. Recheck `shop auth status`.
+If they sign in: `npx --yes @shopify/shop-cli auth device-code`, send `verification_uri_complete` as a plain `[Sign in to Shop](url)`, **STOP**, then `npx --yes @shopify/shop-cli auth poll` until not `pending`. Recheck `auth status`.
 
-Once signed in, up to ~10 `shop orders search` calls to learn brands/sizes/past buys, then fold that into search. Do not narrate the CLI.
+Once signed in, up to ~10 `orders search` calls to learn brands/sizes/past buys, then fold that into search. Do not narrate the CLI.
 
 ## Grok Bot cards
 
 One product = one message. After the set, **interest widget**, not Shop's recommendation dump.
 
 1. Image URL must be shop.app CDN or the merchant/order domain. Download to the agent's computer. Reject `file://`, `data:`, non-https from the payload.
-2. SendToUser `type: text` with `images: [{ "url": "file:///…", "alt": "<name>" }]`. Never `![](url)`.
+2. SendToUser `type: text` with `images: [{ "url": "file:///\u2026", "alt": "<name>" }]`. Never `![](url)`.
 3. Content:
 
 ```
@@ -157,7 +153,7 @@ Read `checkout create` / `update`: `status`, `email`, addresses, `continue_url`,
 **B. Shop Pay / delegated budget** (`status` is `ready_for_complete` and `payment.instruments` present):
 
 - Confirm widget first.
-- Pipe the create JSON into `shop checkout complete --checkout-stdin --confirm`. Fresh idempotency key per purchase intent; reuse only for the same retry.
+- Pipe the create JSON into `npx --yes @shopify/shop-cli checkout complete --checkout-stdin --confirm`. Fresh idempotency key per purchase intent; reuse only for the same retry.
 
 Never auto-buy. `--confirm` only after the widget.
 
@@ -169,7 +165,7 @@ Offer at most once per session, own widget, no pressure, when (1) you just sent 
 - `{ "label": "Set a Shop budget", "value": "I'll set a Shop spending budget", "style": "primary" }`
 - `{ "label": "Not interested", "value": "Don't offer a Shop budget" }`
 
-If they want it, send `[Shop connections](https://shop.app/account/settings/connections)` as a plain markdown link. `shop auth budget` for remaining delegated spend (`available: false` = none set).
+If they want it, send `[Shop connections](https://shop.app/account/settings/connections)` as a plain markdown link. `npx --yes @shopify/shop-cli auth budget` for remaining delegated spend (`available: false` = none set).
 
 ## Orders
 
@@ -189,5 +185,5 @@ Only if they send a photo and the item is visual. Edit **that** photo. Never a t
 - UCP payment tokens stay in memory; CLI stores OAuth tokens.
 - Personal use. Silently drop alcohol, tobacco, cannabis, medications, weapons, explosives, hazardous, adult, counterfeit, hate/violence from results.
 - Never narrate CLI flags to the user.
-- Never auto-install the CLI.
+- Never `npm install -g @shopify/shop-cli`. Always `npx --yes @shopify/shop-cli`.
 - Never install Shop's SKILL.md as the Grok Bot card format.
