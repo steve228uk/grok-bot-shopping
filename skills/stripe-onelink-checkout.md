@@ -4,7 +4,8 @@ description: >-
   Use this when a checkout uses Stripe Onelink (Link) in the browser — SMS OTP
   from Onelink, then tappable widgets for address/card options, then confirm
   with UI buttons. Preferred UK pay path; Google Pay in box Chrome is the
-  backup. Skip US-only link-cli.
+  backup. Skip US-only link-cli. Allow the user to paste the Onelink OTP in chat
+  when iMessage is not installed.
 ---
 # Stripe Onelink (Link) checkout
 
@@ -15,7 +16,9 @@ This is the **preferred UK pay path** in box Chrome. Stripe `link-cli` agent cre
 ## Principles
 
 - Prefer completing Onelink **yourself** in the browser (box `browserUse` / `computerUse`): enter OTP, then click the chosen address/card confirm buttons.
-- **Never** ask the user to paste the Onelink SMS code into chat — read it from Messages via [iMessage on Mac](sand-workflow:imessage-on-mac).
+- **OTP source (pick the first that works):**
+  1. If [iMessage on Mac](sand-workflow:imessage-on-mac) is installed and can read SMS, read the Onelink code from Messages. Do not ask them to paste it.
+  2. Otherwise **ask them to paste the Onelink code into this chat**. Most installs will not have iMessage. Wait for the paste, use it in the Onelink UI, then do not repeat the digits in later messages.
 - When Onelink shows a **list of options** (addresses, cards, payment methods), present them as a Grok Bot **question widget** (tappable options; `multiSelect` only if several can apply). Do not silently choose. Do not dump a bullet menu.
 - Use `request_box_help` only for a step you truly cannot do (e.g. bank app push, captcha, biometric that only they can approve).
 - Do not invent card numbers or ask for card details in chat.
@@ -23,8 +26,8 @@ This is the **preferred UK pay path** in box Chrome. Stripe `link-cli` agent cre
 ## Prerequisites
 
 - Box browser on the checkout page (or resume there).
-- On the user's Mac: [iMessage on Mac](sand-workflow:imessage-on-mac) (`imsg` via ExternalShell) with Full Disk Access so OTP SMS can be read.
-- Messages Automation permission if you also need to *send* or *delete* iMessages (read usually works with FDA alone).
+- iMessage is **optional**. If the user's Mac has [iMessage on Mac](sand-workflow:imessage-on-mac) (`imsg` via ExternalShell) with Full Disk Access, prefer that for OTP. If `imsg` is missing, FDA is denied, or this is not a Mac, skip it and ask them to paste the code.
+- Messages Automation permission is only needed if you also *send* or *delete* iMessages.
 
 ## Flow
 
@@ -35,9 +38,9 @@ This is the **preferred UK pay path** in box Chrome. Stripe `link-cli` agent cre
 3. Trigger continue / verify so Onelink sends the SMS OTP.
 4. Note the time you triggered it (use the newest code after that).
 
-### 2. Read the OTP from iMessage / SMS
+### 2. Get the OTP
 
-On the **user's Mac** (ExternalShell), using `imsg` (see [iMessage on Mac](sand-workflow:imessage-on-mac)):
+**If iMessage is available**, on the user's Mac (ExternalShell):
 
 ```bash
 imsg chats --limit 40 --json
@@ -47,12 +50,18 @@ imsg history --chat-id <onelink-chat-id> --limit 5 --json
 
 Parse a message like: `###### is your Onelink verification code` (6 digits). Keep `guid` and `chat_guid` for delete.
 
-Rules:
+Rules when reading from iMessage:
 
 - Use the **newest** code created **after** you triggered verification.
-- If nothing arrives within ~30–60s, wait briefly and re-check history; do not ask the user for the code.
-- Enter the code in the Onelink UI yourself; do not paste codes into chat with the user.
+- If nothing arrives within ~30–60s, wait briefly and re-check history once.
+- Enter the code in the Onelink UI yourself.
 - **After the code is accepted**, delete that OTP message (`imsg delete-message`) per the iMessage skill.
+
+**If iMessage is not available** (missing CLI, no Mac, no FDA, or the read failed):
+
+1. Tell them Onelink just texted a code and ask them to **paste it here**.
+2. Use the pasted digits in the Onelink UI. Do not echo the code back.
+3. Do not stall on installing iMessage during a live checkout.
 
 ### 3. Widget the address list, then confirm in the UI
 
@@ -73,23 +82,24 @@ After OTP succeeds, Onelink may show saved shipping/billing address(es).
 
 ### 5. Report back
 
-Tell the user: merchant, order id (if any), amount, address used (short), card last4 if shown, and that Onelink OTP was handled via SMS read (do not dump the code). Confirm the OTP message was deleted.
+Tell the user: merchant, order id (if any), amount, address used (short), card last4 if shown, and that Onelink OTP was entered (do not dump the code). If it came from iMessage, confirm that OTP message was deleted.
 
 ## Failure / edge cases
 
 | Symptom | What to do |
 |---|---|
-| No Onelink SMS | Confirm email/phone on the form; retry send code; re-check `imsg` history |
-| Code rejected / expired | Request a new code; take the newest SMS only; delete stale used/superseded OTPs |
+| No Onelink SMS | Confirm email/phone on the form; retry send code; if iMessage is live, re-check history; else ask them to paste |
+| Code rejected / expired | Request a new code; take the newest SMS or paste only; delete stale used/superseded OTPs if iMessage |
 | Option list unclear | Screenshot; widget only the options you can actually see |
 | Pay button disabled | Check required fields / terms checkbox; screenshot and fix |
-| `imsg` missing | Follow [iMessage on Mac](sand-workflow:imessage-on-mac) install/FDA steps |
-| User must approve bank push | `request_box_help` — do not ask for passwords/OTPs in chat |
+| `imsg` missing | Ask them to paste the Onelink code in chat. Do not block checkout on installing iMessage |
+| User must approve bank push | `request_box_help` — do not ask for passwords or card numbers in chat |
 | Onelink not on this checkout | Try Google Pay in the same box Chrome; else `request_box_help` |
 
 ## Do not
 
-- Put OTP codes, full card numbers, or CVCs in chat transcripts.
+- Repeat OTP digits, full card numbers, or CVCs in later chat messages.
 - Silently pick among Onelink address or card options — **always widget the list**.
 - Skip confirmation buttons after the user has chosen.
 - Use `link-cli` unless the buyer is on the US agent-wallet path (US-only).
+- Block a live checkout to install iMessage.

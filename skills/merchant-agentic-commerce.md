@@ -30,7 +30,7 @@ Whenever the user must pick (product, variant, qty, address, shipping, payment, 
 
 Search results go back as **one product per chat message**, then an interest widget. Not a table and not a single dump.
 
-1. **One markdown message per product.** The product title **must** be a markdown link to the real merchant PDP (`[Name](https://…)`). Also include price and a short description (BBE/best-before if you have it). Skip fields you do not have; never invent. Do not batch hits into one bubble.
+1. **One markdown message per product.** The product title **must** be a markdown link to the real merchant PDP: `[Name](https://…)` with **no** wrapping `**` around the link. Grok Bot's chat renderer treats `**[Name](url)**` as bold text and drops the tap-through. Price and a short description go on following lines (BBE/best-before if you have it). Skip fields you do not have; never invent. Do not batch hits into one bubble. Do not use `grokbot://` for merchant URLs (that scheme is Settings/plugins only; https PDPs open in the system browser).
 2. **Then** send one question widget: "Any of these interest you?" with `multiSelect: true` and `allowCustom: true`. Each option is a real product just shown (short name + price). Option `value` reads like a reply. Sending the widget **ends the turn**. If tap-several fails, they can type several names.
 3. Widget max 6. If you showed more than 6 products, put the 6 strongest matches in the widget and keep `allowCustom: true`. Do not invent extra options.
 4. Confirm-before-pay stays a separate single-select widget later.
@@ -138,4 +138,4 @@ Shop CLI does not replace confirm-before-pay.
 - Never use merchant admin MCP as a shopper.
 - Never collect PANs in chat.
 - Never auto-install Shop CLI or Link CLI.
-- Search hits: per-product markdown **link**, then a `multiSelect` + `allowCustom` interest widget. Confirm-before-pay stays single-select.
+- Search hits: per-product `[Name](url)` (never `**[Name](url)**`), then a `multiSelect` + `allowCustom` interest widget. Confirm-before-pay stays single-select.
