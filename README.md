@@ -11,7 +11,7 @@ Install Grok Bot shopping from https://github.com/steve228uk/grok-bot-shopping
 Follow INSTALL.md.
 ```
 
-Grok Bot will fetch the skills, skip a global Shop CLI install (always `npx --yes @shopify/shop-cli`), install libsecret/keytar if Shop auth cannot store tokens, offer Shop sign-in, optionally ask about Stripe Link CLI (US only), and ask whether to create a **Buyer** agent.
+Grok Bot will fetch the skills, skip a global Shop CLI install (always `npx --yes @shopify/shop-cli`), install libsecret/keytar if Shop auth cannot store tokens, offer Shop sign-in, tell you to turn on **Allow agent to pay for me** in [Shop connections](https://shop.app/account/settings/connections) (spend limit), optionally ask about Stripe Link CLI (US only), and ask whether to create a **Buyer** agent.
 
 Nothing is required for UCP search or Onelink in the browser. Shop Pay and the Shop catalog always use:
 
@@ -22,6 +22,24 @@ npx --yes @shopify/shop-cli
 Shop **sign-in** needs OS secret storage. On Linux that is libsecret (`libsecret-1-0` + `libsecret-1-dev`); on macOS, Keychain. Do not `npm install -g @shopify/shop-cli`. Do not use `--memory-store` for real login.
 
 Grok Bot has **npm**, not pnpm. Do not install https://shop.app/SKILL.md as a Grok Bot skill. This pack wraps Shop's CLI via npx instead.
+
+## Shop Pay agent pay (required for CLI complete)
+
+Sign-in alone does **not** let Grok Bot finish payment in Shop CLI. For `checkout complete` you must:
+
+1. Sign in to Shop (device-code during install, or later).
+2. Open [Shop connections](https://shop.app/account/settings/connections).
+3. Open the **Grok Bot** connection.
+4. Toggle **Allow agent to pay for me**.
+5. Set a **Spend limit** (Monthly / Weekly / Total) and an amount.
+
+Verify from the agent:
+
+```bash
+npx --yes @shopify/shop-cli auth budget
+```
+
+`available: true` with a `remaining_amount` means the budget is live. Search and `checkout create` work without this. Completing still also needs the **merchant** to return a Shop Pay payment instrument; if instruments are empty, use the Finish in Shop / `continue_url` path instead.
 
 ## What's in the pack
 

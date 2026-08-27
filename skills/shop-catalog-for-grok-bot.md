@@ -190,11 +190,11 @@ Never auto-buy. `--confirm` only after the widget.
 
 Offer at most once per session, own widget, no pressure, when (1) you just sent a Finish-in-Shop link, or (2) they asked you to pay without per-purchase approval.
 
-- prompt: "Set a Shop spending budget so I can complete Shop Pay checkouts?"
+Toggle **Allow agent to pay for me** + Spend limit at [Shop connections](https://shop.app/account/settings/connections). Verify with `npx --yes @shopify/shop-cli auth budget` (`available: false` = toggle/limit still off).
+
+- prompt: "Turn on Allow agent to pay for me in Shop connections so I can complete Shop Pay checkouts?"
 - `{ "label": "Set a Shop budget", "value": "I'll set a Shop spending budget", "style": "primary" }`
 - `{ "label": "Not interested", "value": "Don't offer a Shop budget" }`
-
-If they want it, send `[Shop connections](https://shop.app/account/settings/connections)` as a plain markdown link. `npx --yes @shopify/shop-cli auth budget` for remaining delegated spend (`available: false` = none set).
 
 ## Orders
 
