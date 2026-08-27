@@ -55,7 +55,7 @@ Grok Bot's computer has **npm**, not pnpm. `--yes` skips the npx prompt. Do not 
 
 If npx is blocked, follow https://shop.app/references/catalog-mcp.md and https://shop.app/references/direct-api.md from the Shop catalog skill.
 
-### 3. Secret store (keytar) — widget if broken
+### 3. Secret store (libsecret) — Linux CLI, no GUI keyring dialog
 
 Run:
 
@@ -67,25 +67,32 @@ Good: JSON like `{"authenticated": false}` or `true`. Bad: `OS secret storage is
 
 `--memory-store` is tests only. Do not use it for real sign-in (tokens die when the npx process exits).
 
-A global `npm install -g keytar` is usually **not** enough for npx Shop CLI. On Linux, Shop's bundled keytar needs **libsecret**.
+A global `npm install -g keytar` is usually **not** enough for npx Shop CLI. On Linux, Shop's bundled keytar needs **libsecret** plus an **unlocked** GNOME keyring.
 
-If auth status failed on secret storage, send a widget (**ends the turn**):
+**Do not** hand the user a GTK "Choose password for new keyring" dialog. That window freezes in Grok Bot (no clicks, cannot close). Unlock from the terminal instead.
 
-- `prompt`: "Shop sign-in needs OS secret storage (keytar). Install libsecret so tokens can be saved?"
-- `{ "label": "Install libsecret", "value": "Install libsecret for Shop auth", "style": "primary" }`
-- `{ "label": "Skip", "value": "Skip Shop secret store" }`
+If auth status failed on secret storage, or `auth device-code` hangs, on Linux:
 
-If they confirm, on Linux:
+1. Widget first (**ends the turn**) unless they already asked you to install it:
+   - `prompt`: "Shop sign-in needs libsecret and an unlocked keyring on this computer. Install that?"
+   - `{ "label": "Install libsecret", "value": "Install libsecret for Shop auth", "style": "primary" }`
+   - `{ "label": "Skip", "value": "Skip Shop secret store" }`
+2. If they confirm:
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y libsecret-1-0 libsecret-1-dev libsecret-tools pkg-config build-essential
+# If a gcr-prompter / keyring password window is already up, kill it:
+pkill -f gcr-prompter || true
+echo -n '' | gnome-keyring-daemon --unlock
 npx --yes @shopify/shop-cli auth status
 ```
 
+The empty `echo -n ''` unlocks (or creates) the default keyring with no password. That is the intended path on Grok Bot's Linux computer. Do **not** `request_box_help` for this.
+
 On macOS, Keychain should already work; if it does not, say so instead of apt.
 
-Retry `auth status`. It should no longer mention keytar. Do not start device-code yet.
+Retry `auth status`. It should no longer mention keytar. Then continue to sign-in.
 
 If they skip, continue. Shop search stays unsigned.
 
@@ -97,7 +104,13 @@ If `auth status` is signed-out (and secret storage works), offer sign-in once. W
 - `{ "label": "Sign in to Shop", "value": "I'll sign in to Shop", "style": "primary" }`
 - `{ "label": "Continue unsigned", "value": "Continue without Shop sign-in" }`
 
-If they sign in: `npx --yes @shopify/shop-cli auth device-code --device-name "<agent> - <host>"`, send `verification_uri_complete` as a plain `[Sign in to Shop](url)`, **STOP**, then `npx --yes @shopify/shop-cli auth poll` until not `pending`. Recheck `auth status`.
+If they sign in:
+
+1. If `auth device-code` hangs, you likely hit the GUI keyring dialog. Kill `gcr-prompter` and the hung `shop` process, run `echo -n '' | gnome-keyring-daemon --unlock`, retry.
+2. `npx --yes @shopify/shop-cli auth device-code --device-name "<agent> - <host>"`
+3. Send `verification_uri_complete` as a plain `[Sign in to Shop](url)` (**no** wrapping `**`).
+4. Widget: they've signed in / cancel. **STOP**.
+5. After they confirm, `npx --yes @shopify/shop-cli auth poll` until not `pending`. Recheck `auth status`.
 
 If they continue unsigned, skip poll.
 
@@ -143,7 +156,7 @@ Tell them:
 
 - Skills installed (names).
 - Shop CLI is invoked with `npx --yes @shopify/shop-cli` (not installed globally).
-- Whether libsecret/keytar landed (or that you skipped).
+- Whether libsecret + CLI keyring unlock landed (or that you skipped).
 - Whether they signed in to Shop (or unsigned).
 - Whether Link CLI landed (or that you skipped).
 - Whether Buyer was created.
@@ -153,7 +166,8 @@ Tell them:
 
 - Never `npm install -g @shopify/shop-cli`. Always `npx --yes @shopify/shop-cli`.
 - Never use `--memory-store` for real Shop sign-in.
-- Never auto-install libsecret/keytar or Link CLI.
+- Never hand the user a GNOME "Choose password for new keyring" dialog. Unlock with `echo -n '' | gnome-keyring-daemon --unlock`.
+- Never auto-install libsecret or Link CLI (widget first, unless they already asked).
 - Never auto-create Buyer.
 - Never install https://shop.app/SKILL.md as a Grok Bot skill.
 - Never collect PANs or ask for passwords in chat.
