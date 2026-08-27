@@ -11,7 +11,7 @@ Install Grok Bot shopping from https://github.com/steve228uk/grok-bot-shopping
 Follow INSTALL.md.
 ```
 
-Grok Bot will fetch the skills, skip a global Shop CLI install (always `npx --yes @shopify/shop-cli`), optionally ask about Stripe Link CLI (US only), and ask whether to create a **Buyer** agent.
+Grok Bot will fetch the skills, skip a global Shop CLI install (always `npx --yes @shopify/shop-cli`), install libsecret/keytar if Shop auth cannot store tokens, offer Shop sign-in, optionally ask about Stripe Link CLI (US only), and ask whether to create a **Buyer** agent.
 
 Nothing is required for UCP search or Onelink in the browser. Shop Pay and the Shop catalog always use:
 
@@ -19,7 +19,9 @@ Nothing is required for UCP search or Onelink in the browser. Shop Pay and the S
 npx --yes @shopify/shop-cli
 ```
 
-Do not `npm install -g @shopify/shop-cli`. Grok Bot has **npm**, not pnpm. Do not install https://shop.app/SKILL.md as a Grok Bot skill. This pack wraps Shop's CLI via npx instead.
+Shop **sign-in** needs OS secret storage. On Linux that is libsecret (`libsecret-1-0` + `libsecret-1-dev`); on macOS, Keychain. Do not `npm install -g @shopify/shop-cli`. Do not use `--memory-store` for real login.
+
+Grok Bot has **npm**, not pnpm. Do not install https://shop.app/SKILL.md as a Grok Bot skill. This pack wraps Shop's CLI via npx instead.
 
 ## What's in the pack
 
