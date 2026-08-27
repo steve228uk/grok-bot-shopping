@@ -174,10 +174,22 @@ Before `--confirm`: signed-in, and a **single-select** confirm widget (merchant,
 
 Read `checkout create` / `update`: `status`, `email`, addresses, `continue_url`, `payment.instruments`, `shop_pay_availability`. Pass `--country` on create so presentment currency is right. Collect missing shipping via widget, then `checkout update`.
 
+**Finish path when `continue_url` is present** (including `status: requires_escalation` or empty `payment.instruments`):
+
+Grok Bot widgets **cannot open a URL**. Option click only returns `value`. No `url`/`href`/`action` on options. `grokbot://` is not for merchant continue_url.
+
+1. Send `[Finish in Shop](continue_url)` as a plain markdown link (this is what opens Shop / the merchant checkout).
+2. Then a **single-select** widget (ends the turn):
+   - prompt: `Do you want me to try checking out?`
+   - `{ "label": "Yes, checkout for me", "value": "Yes, checkout for me", "style": "primary" }`
+   - `{ "label": "No, I'll finish in Shop", "value": "No, I'll finish in Shop" }`
+3. **Yes** = open `continue_url` in box Chrome and attempt pay (Onelink, then Google Pay / Shop Pay). Still never auto-buy; still no PANs in chat.
+4. **No** = stop. They use the markdown link.
+
 **A. No Shop Pay instrument** (`payment.instruments` empty):
 
 - `shop_pay_availability.budget_available: true` — delegated budget exists but this store does not accept Shop agent payments. Find similar items; do **not** offer a budget.
-- `budget_available: false` — send `[Finish in Shop](continue_url)` as a plain markdown link, then **separately** widget a spending-budget offer (below).
+- `budget_available: false` — still use the Finish in Shop link + try-checking-out widget above. Offer a spending budget at most once per session, in a **later** widget, never on the same turn.
 
 **B. Shop Pay / delegated budget** (`status` is `ready_for_complete` and `payment.instruments` present):
 
@@ -188,13 +200,15 @@ Never auto-buy. `--confirm` only after the widget.
 
 ### Spending budget
 
-Offer at most once per session, own widget, no pressure, when (1) you just sent a Finish-in-Shop link, or (2) they asked you to pay without per-purchase approval.
+CLI `checkout complete` needs a Shop delegated spend budget. Sign-in alone is not enough. In the Shop app / web: [Shop connections](https://shop.app/account/settings/connections) → open the **Grok Bot** connection → toggle **Allow agent to pay for me** → set a **Spend limit**. Then verify with `npx --yes @shopify/shop-cli auth budget` (`available: false` = still off).
 
-Toggle **Allow agent to pay for me** + Spend limit at [Shop connections](https://shop.app/account/settings/connections). Verify with `npx --yes @shopify/shop-cli auth budget` (`available: false` = toggle/limit still off).
+Offer the budget setup at most once per session, own widget, no pressure, when (1) you just sent a Finish-in-Shop link, (2) they asked you to pay without per-purchase approval, or (3) install / first complete attempt and `auth budget` is unavailable. Do not replace the try-checking-out widget with this.
 
 - prompt: "Turn on Allow agent to pay for me in Shop connections so I can complete Shop Pay checkouts?"
-- `{ "label": "Set a Shop budget", "value": "I'll set a Shop spending budget", "style": "primary" }`
+- `{ "label": "Open Shop connections", "value": "I'll enable Shop agent pay", "style": "primary" }`
 - `{ "label": "Not interested", "value": "Don't offer a Shop budget" }`
+
+If they want it, send `[Shop connections](https://shop.app/account/settings/connections)` as a plain markdown link and tell them the toggle name and spend limit. Recheck `auth budget` after they say it is on.
 
 ## Orders
 
